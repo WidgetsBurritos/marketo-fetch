@@ -1,0 +1,19 @@
+{
+    "name": "widgetsburritos/marketo-fetch",
+    "description": "Fetchs data from Marketo",
+    "type": "library",
+    "authors": [
+        {
+            "name": "David Stinemetze",
+            "email": "davidstinemetze@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "WidgetsBurritos\\MarketoFetch\\": "src/"
+        }
+    },
+    "require": {
+        "vlucas/phpdotenv": "^3.1"
+    }
+}
