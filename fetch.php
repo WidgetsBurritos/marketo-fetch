@@ -7,6 +7,7 @@ require_once('vendor/autoload.php');
 
 use Dotenv\Dotenv;
 use WidgetsBurritos\MarketoFetch\Marketo;
+use WidgetsBurritos\MarketoFetch\Twig;
 
 $dotenv = Dotenv::create(__DIR__);
 $dotenv->load();
@@ -17,11 +18,15 @@ $client_id = getenv('MARKETO_CLIENT_ID') ?: '';
 $client_secret = getenv('MARKETO_CLIENT_SECRET') ?: '';
 $sleep_seconds = getenv('MARKETO_SLEEP_SECONDS') ?: 10;
 $debug_mode = getenv('MARKETO_DEBUG_MODE') ?: FALSE;
-$cache_dir = getenv('MARKETO_CACHE_DIR') ?: __DIR__ . '/cache';
+$cache_dir = getenv('MARKETO_CACHE_DIR');
+$twig_dir = getenv('TWIG_DIR');
 
-// Create our cache directory.
-if (!file_exists($cache_dir)) {
-  mkdir($cache_dir, 0700);
+// Create our cache/twig directories if they don't already exist.
+$dirs = [$cache_dir, $twig_dir];
+foreach ($dirs as $dir) {
+  if (!empty($dir) && !file_exists($dir)) {
+    mkdir($dir, 0700);
+  }
 }
 
 // Authenticate.
@@ -29,8 +34,11 @@ $marketo = new Marketo($host_name, $debug_mode, $sleep_seconds);
 $marketo->setCacheDir($cache_dir);
 $marketo->authenticate($client_id, $client_secret);
 
-$argument = sizeof($argv) >= 2 ? $argv[1] : NULL;
+// Setup twig functionality.
+$twig = new Twig($twig_dir);
 
+// Argument evaluation.
+$argument = sizeof($argv) >= 2 ? $argv[1] : NULL;
 switch ($argument) {
   case 'vars-compare':
     print '=====================' . PHP_EOL;
@@ -71,7 +79,7 @@ switch ($argument) {
     print 'Assigned variables' . PHP_EOL;
     print '=====================' . PHP_EOL;
     $variables = $marketo->getVariablesDefinedOnPages();
-    print_r($variables);
+    // print_r($variables);
     $variable_ct = count($variables);
     print "All Variables: {$variable_ct}" . PHP_EOL;
     break;
@@ -112,13 +120,28 @@ switch ($argument) {
     print_r($count);
     break;
 
+  case 'unique-templates':
+    $templates = $marketo->getAllLandingPageTemplateContent();
+
+    break;
+
+  case 'generate-twig-templates':
+    $templates = $marketo->getAllLandingPageTemplateContent();
+    foreach ($templates as $template) {
+      $twig->saveTemplate($template);
+    }
+    break;
+
   case 'warm-cache':
     $marketo->warmCache();
     break;
 
   case 'purge-cache':
     // TODO: Rewrite this in a more PHP-friendly.
-    `rm -f {$cache_dir}/*`;
+    if (!empty($cache_dir)) {
+      `rm -f {$cache_dir}/*`;
+    }
+    break;
 
   default:
     die("Invalid argument '{$argument}'" . PHP_EOL);

@@ -24,24 +24,39 @@ class Marketo {
    * Sets the caching directory to the specified directory.
    */
   public function setCacheDir($dir) {
-    $this->cacheDir = $dir;
+    if ($this->isValidCacheDirectory($dir)) {
+      $this->cacheDir = $dir;
+    }
+    else {
+      throw new \Exception('Cache directory is invalid.');
+    }
   }
 
   /**
    * Indicates whether or not caching is enabled based on presence of cache dir.
    */
   public function isCaching() {
-    return !empty($this->cacheDir) && is_readable($this->cacheDir) && is_writeable($this->cacheDir);
+    return $this->isValidCacheDirectory($this->cacheDir);
+  }
+
+  /**
+   * Indicates whether or not a cache directory is valid.
+   */
+  private function isValidCacheDirectory($cache_dir) {
+    return !empty($cache_dir) && is_readable($cache_dir) && is_writeable($cache_dir);
   }
 
   /**
    * Warms cache by loading all the resources from Marketo.
    */
   public function warmCache() {
+    if (!$this->isCaching()) {
+      throw new \Exception('Caching currently disabled.');
+    }
     $this->getAllLandingPageTemplates();
     $this->getAllLandingPages();
-    $this->getVariablesDefinedOnPages();
     $this->getVariablesUsedInTemplates();
+    $this->getVariablesDefinedOnPages();
   }
 
   /**
@@ -94,7 +109,9 @@ class Marketo {
    */
   private function makeGetRequest($endpoint, $options = []) {
     $url = $this->assembleEndpointUrl($endpoint, $options);
-    $cache_key = md5($url);
+    // We need to strip out the access token to prevent the cache from becoming
+    // irrelevant. Also probably is good from a security posture.
+    $cache_key = md5(str_replace($this->accessToken, '', $url));
     if ($this->isCaching()) {
       $cache_value = $this->getCacheByKey($cache_key);
       if (isset($cache_value)) {
@@ -223,9 +240,9 @@ class Marketo {
   }
 
   /**
-   * Retrieves all variables referenced in landing page templates.
+   * Retrieves all landing page templates.
    */
-  public function getVariablesUsedInTemplates() {
+  public function getAllLandingPageTemplateContent() {
     $templates = $this->getAllLandingPageTemplates();
     $all = [];
     foreach ($templates as $template) {
@@ -234,24 +251,38 @@ class Marketo {
         print "{$endpoint}: {$template->name} ... ";
       }
       $response = $this->makeGetRequest($endpoint);
-      $variables = [];
-      if (!empty($response->result[0]->content)) {
-        $variables = static::parseHtmlForVariables($response->result[0]->content);
-        if (!empty($variables)) {
-          foreach ($variables as $variable) {
-            $all[$variable][$template->id] = $template->name;
-          }
-        }
-      }
-      $variable_ct = count($variables);
+      $all[$template->id] = [
+        'template' => $template,
+        'response' => $response->result[0],
+      ];
+
       if ($this->debugMode) {
-        print "{$variable_ct} variables." . PHP_EOL;
+        print 'done' . PHP_EOL;
       }
       if (!$response->__loadedFromCache) {
         sleep($this->sleepSeconds);
       }
     }
 
+    return $all;
+  }
+
+  /**
+   * Retrieves all variables referenced in landing page templates.
+   */
+  public function getVariablesUsedInTemplates() {
+    $templates = $this->getAllLandingPageTemplateContent();
+    $all = [];
+    foreach ($templates as $template) {
+      if (!empty($template['response']->content)) {
+        $variables = static::parseHtmlForVariables($template['response']->content);
+        if (!empty($variables)) {
+          foreach ($variables as $variable) {
+            $all[$variable][$template['template']->id] = $template['template']->name;
+          }
+        }
+      }
+    }
     ksort($all);
     return $all;
   }
