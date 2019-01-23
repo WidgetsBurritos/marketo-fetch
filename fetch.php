@@ -94,6 +94,26 @@ switch ($argument) {
     print "Unique Variable Groups: {$group_ct}" . PHP_EOL;
     break;
 
+  case 'vars-values':
+    print '=====================' . PHP_EOL;
+    print 'Variable Values' . PHP_EOL;
+    print '=====================' . PHP_EOL;
+    $variable_values = $marketo->getAllVariableValues();
+    // We only care about variables that are actually used in templates.
+    $template_variables = $marketo->getVariablesUsedInTemplates();
+    $variables = array_intersect_key($variable_values, $template_variables);
+    foreach ($variables as $variable => $details) {
+      $ct = count($details);
+      if ($ct >= 4) {
+        $ct = '4+';
+      }
+      $count[$ct][] = $variable;
+    }
+    ksort($count);
+
+    print_r($count);
+    break;
+
   case 'landing-pages':
     print '=====================' . PHP_EOL;
     print 'Landing Pages' . PHP_EOL;

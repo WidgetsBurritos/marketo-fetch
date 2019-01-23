@@ -210,6 +210,50 @@ class Marketo {
   }
 
   /**
+   * Retrieves all unique variable values.
+   */
+  public function getAllVariableValues() {
+    $all = [];
+    $landing_pages = $this->getAllLandingPages();
+    foreach ($landing_pages as $landing_page) {
+      $endpoint = "/rest/asset/v1/landingPage/{$landing_page->id}/variables.json";
+      if ($this->debugMode) {
+        print "{$endpoint}: {$landing_page->name} ... ";
+      }
+      $response = $this->makeGetRequest($endpoint);
+      $variable_ct = 0;
+      if (!empty($response->result)) {
+        $variable_ct = count($response->result);
+        foreach ($response->result as $variable) {
+          if (empty($all[$variable->id][$variable->value])) {
+            // Consolidate truthy values.
+            if ($variable->value === 'true') {
+              $variable->value = 1;
+            }
+            // Consolidate falsey values.
+            else if ($variable->value === 'false') {
+              $variable->value = 0;
+            }
+            // Dedupe varying cases.
+            $variable->value = strtolower($variable->value);
+            $all[$variable->id][$variable->value] = 0;
+          }
+          $all[$variable->id][$variable->value]++;
+        }
+      }
+      if ($this->debugMode) {
+        print "{$variable_ct} variables." . PHP_EOL;
+      }
+      if (!$response->__loadedFromCache) {
+        sleep($this->sleepSeconds);
+      }
+    }
+
+    ksort($all);
+    return $all;
+  }
+
+  /**
    * Retrieves all variables set on individual landing pages.
    */
   public function getVariablesDefinedOnPages() {
