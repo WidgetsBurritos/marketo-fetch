@@ -74,14 +74,24 @@ switch ($argument) {
     print "Total Used Variables: {$variable_ct}" . PHP_EOL;
     break;
 
-  case 'vars-assigned';
+  case 'vars-assigned':
     print '=====================' . PHP_EOL;
     print 'Assigned variables' . PHP_EOL;
     print '=====================' . PHP_EOL;
     $variables = $marketo->getVariablesDefinedOnPages();
-    // print_r($variables);
+    print_r($variables);
     $variable_ct = count($variables);
     print "All Variables: {$variable_ct}" . PHP_EOL;
+    break;
+
+  case 'vars-groups':
+    print '=====================' . PHP_EOL;
+    print 'Variable Groups' . PHP_EOL;
+    print '=====================' . PHP_EOL;
+    $groups = $marketo->getVariableGroupsFromTemplates();
+    print_r($groups);
+    $group_ct = count($groups);
+    print "Unique Variable Groups: {$group_ct}" . PHP_EOL;
     break;
 
   case 'landing-pages':

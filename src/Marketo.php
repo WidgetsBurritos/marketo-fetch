@@ -267,6 +267,22 @@ class Marketo {
     return $all;
   }
 
+  public function getVariableGroupsFromTemplates() {
+    $templates = $this->getAllLandingPageTemplateContent();
+    $groups = [];
+    foreach ($templates as $template) {
+      if (!empty($template['response']->content)) {
+        $variables = static::parseHtmlForVariables($template['response']->content);
+        $variable_list = implode(':', $variables);
+        $group_id = md5($variable_list);
+        $groups[$group_id]['variable_list'] = $variable_list;
+        $groups[$group_id]['variable_ct'] = count($variables);
+        $groups[$group_id]['templates'][$template['template']->id] = $template['template']->name;
+      }
+    }
+    return $groups;
+  }
+
   /**
    * Retrieves all variables referenced in landing page templates.
    */
