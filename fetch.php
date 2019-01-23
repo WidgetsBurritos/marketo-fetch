@@ -168,6 +168,7 @@ switch ($argument) {
 
   case 'purge-cache':
     // TODO: Rewrite this in a more PHP-friendly.
+    // TODO: Write mechanism to purge only specific caches.
     if (!empty($cache_dir)) {
       `rm -f {$cache_dir}/*`;
     }
