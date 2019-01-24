@@ -114,6 +114,70 @@ switch ($argument) {
     print_r($count);
     break;
 
+  case 'folders':
+    $folders = $marketo->getAllFolders();
+    $all = [];
+    $count = [
+      'total' => 0,
+      'archive' => 0,
+      'active' => 0,
+    ];
+    foreach ($folders as $folder) {
+      $archive_key = ($folder->isArchive) ? 'archive' : 'active';
+      $count[$archive_key]++;
+      $count['total']++;
+      $all[] = $folder->path;
+    }
+    print_r($all);
+    print_r($count);
+    break;
+
+  case 'folder-contents':
+    $folders = $marketo->getAllFolderContent();
+    $all = [];
+    $counts = [
+      'total' => 0,
+      'archive' => 0,
+      'non-archive' => 0,
+      'empty' => 0,
+      'non-empty' => 0,
+      'folders-only' => 0,
+      'non-folders' => 0,
+    ];
+
+    foreach ($folders as $path => $folder) {
+      if (!stristr($path, 'Marketing Activities')) {
+        continue;
+      }
+      $all[$path] = count($folder);
+      $empty_key = $all[$path] === 0 ? 'empty' : 'non-empty';
+      $already_set = [];
+      $found = [];
+      foreach ($folder as $object) {
+        $key = "{$object->type}";
+        if (!isset($already_set[$key])) {
+          $found[] = $key;
+          $already_set[$key] = TRUE;
+        }
+      }
+      $found_ct = count($found);
+      $folder_key = $found_ct == 1 && $found[0] == 'Folder' ? 'folders-only' : 'non-folders';
+      if ($found_ct > 0) {
+        if (!empty($counts[$folder_key])) {
+          $counts[$folder_key] = 0;
+        }
+        $counts[$folder_key]++;
+      }
+      $archive_key = stristr($path, 'archive') ? 'archive' : 'non-archive';
+      $counts[$archive_key]++;
+      $counts[$empty_key]++;
+      $counts['total']++;
+    }
+
+    print_r($all);
+    print_r($counts);
+    break;
+
   case 'landing-pages':
     print '=====================' . PHP_EOL;
     print 'Landing Pages' . PHP_EOL;
@@ -123,13 +187,23 @@ switch ($argument) {
     $lp_ct = count($landing_pages);
     print "Landing Pages: {$lp_ct}" . PHP_EOL;
     $count = [];
+    $folders = [];
     foreach ($landing_pages as $lp) {
       if (!isset($count[$lp->status])) {
         $count[$lp->status] = 0;
       }
       $count[$lp->status]++;
+      if (!isset($folder[$lp->folder->folderName])) {
+        $folder[$lp->folder->folderName] = 0;
+      }
+      $folder[$lp->folder->folderName]++;
     }
+    ksort($folder);
     print_r($count);
+    print_r($folder);
+    $folder_ct = count($folder);
+    print "{$folder_ct} folders." . PHP_EOL;
+
     break;
 
   case 'landing-page-templates':

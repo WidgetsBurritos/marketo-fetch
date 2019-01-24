@@ -327,6 +327,39 @@ class Marketo {
     return $groups;
   }
 
+  public function getAllFolders() {
+    return $this->getAllFromPagedEndpoint('/rest/asset/v1/folders.json');
+  }
+
+  /**
+   * Retrieves
+   */
+  public function getAllFolderContent() {
+    $folders = $this->getAllFolders();
+    $all = [];
+    foreach ($folders as $folder) {
+      $endpoint = "/rest/asset/v1/folder/{$folder->folderId->id}/content.json";
+      $response = $this->makeGetRequest($endpoint);
+      if ($this->debugMode) {
+        print "{$endpoint}: {$folder->path} ... ";
+      }
+      if (!empty($response->result)) {
+        $all[$folder->path] = $response->result;
+      }
+      else {
+        $all[$folder->path] = [];
+      }
+      if ($this->debugMode) {
+        $response_ct = count($all[$folder->path]);
+        print "{$response_ct} objects." . PHP_EOL;
+      }
+      if (!$response->__loadedFromCache) {
+        sleep($this->sleepSeconds);
+      }
+    }
+    return $all;
+  }
+
   /**
    * Retrieves all variables referenced in landing page templates.
    */
