@@ -19,6 +19,8 @@ $client_secret = getenv('MARKETO_CLIENT_SECRET') ?: '';
 $sleep_seconds = getenv('MARKETO_SLEEP_SECONDS') ?: 10;
 $debug_mode = getenv('MARKETO_DEBUG_MODE') ?: FALSE;
 $cache_dir = getenv('MARKETO_CACHE_DIR');
+$before_path = getenv('MARKETO_PATH_BEFORE') ?: NULL;
+$after_path = getenv('MARKETO_PATH_AFTER') ?: NULL;
 $twig_dir = getenv('TWIG_DIR');
 
 // Create our cache/twig directories if they don't already exist.
@@ -178,12 +180,63 @@ switch ($argument) {
     print_r($counts);
     break;
 
+  case 'landing-page-urls':
+    print '=====================' . PHP_EOL;
+    print 'Landing Page URLs' . PHP_EOL;
+    print '=====================' . PHP_EOL;
+    $landing_pages = $marketo->getAllLandingPages();
+
+    $urls = [
+      implode(',', ['URL', 'Landing Page Status', 'Folder Type', 'Folder Name', 'Folder Status', 'Program Type']),
+    ];
+    foreach ($landing_pages as $landing_page) {
+      $url = $landing_page->URL;
+      $folder_type = $landing_page->folder->type;
+      $folder_id = $landing_page->folder->value;
+      $folder_status = '';
+      $program_type = '';
+      if ($folder_type == 'Folder') {
+        $folder = $marketo->getFolderById($folder_id);
+        $folder_name = $folder->name;
+        $folder_status = ($folder->isArchive) ? 'archive' : 'active';
+      }
+      elseif ($folder_type == 'Program') {
+        $program = $marketo->getProgramById($folder_id);
+        $folder_name = $program->name;
+        $program_type = $program->type;
+      }
+      else {
+        throw new \Exception("Unknown folder type: {$folder_type}");
+      }
+
+      // // print $landing_page->folder->type . PHP_EOL;
+      // if (isset($folder)) {
+      //
+      // }
+      // else {
+      //   // $archive_key = 'invalid';
+      //   // print_r($landing_page);
+      //   // print "FOLDER: {$folder_id}" . PHP_EOL;
+      //   // if ($folder_id == 1417) {
+      //   //   print_r($landing_page);
+      //   // }
+      //   // print $landing_page->computedUrl . PHP_EOL;
+      //   // return;
+      // }
+      if (isset($before_path) && isset($after_path)) {
+        $url = str_ireplace($before_path, $after_path, $url);
+      }
+      $urls[] = implode(',', [$url, $landing_page->status, $folder_type, $folder_name, $folder_status, $program_type]);
+    }
+    sort($urls);
+    print implode(PHP_EOL, $urls) . PHP_EOL;
+    break;
+
   case 'landing-pages':
     print '=====================' . PHP_EOL;
     print 'Landing Pages' . PHP_EOL;
     print '=====================' . PHP_EOL;
     $landing_pages = $marketo->getAllLandingPages();
-    print_r($landing_pages);
     $lp_ct = count($landing_pages);
     print "Landing Pages: {$lp_ct}" . PHP_EOL;
     $count = [];

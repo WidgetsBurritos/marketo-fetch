@@ -327,12 +327,37 @@ class Marketo {
     return $groups;
   }
 
+  /**
+   * Retrieves a program based on specified id.
+   */
+  public function getProgramById($program_id) {
+    $folder = $this->makeGetRequest("/rest/asset/v1/program/{$program_id}.json");
+    if (isset($folder->result[0])) {
+      return $folder->result[0];
+    }
+    return NULL;
+  }
+
+  /**
+   * Retrieves a folder based on specified id.
+   */
+  public function getFolderById($folder_id) {
+    $folder = $this->makeGetRequest("/rest/asset/v1/folder/{$folder_id}.json");
+    if (isset($folder->result[0])) {
+      return $folder->result[0];
+    }
+    return NULL;
+  }
+
+  /**
+   * Retrieves all folders from marketo.
+   */
   public function getAllFolders() {
     return $this->getAllFromPagedEndpoint('/rest/asset/v1/folders.json');
   }
 
   /**
-   * Retrieves
+   * Retrieves all folder content from marketo.
    */
   public function getAllFolderContent() {
     $folders = $this->getAllFolders();
