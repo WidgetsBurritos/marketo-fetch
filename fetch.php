@@ -197,36 +197,20 @@ switch ($argument) {
       $program_type = '';
       if ($folder_type == 'Folder') {
         $folder = $marketo->getFolderById($folder_id);
-        $folder_name = $folder->name;
         $folder_status = ($folder->isArchive) ? 'archive' : 'active';
       }
       elseif ($folder_type == 'Program') {
         $program = $marketo->getProgramById($folder_id);
-        $folder_name = $program->name;
         $program_type = $program->type;
       }
       else {
         throw new \Exception("Unknown folder type: {$folder_type}");
       }
 
-      // // print $landing_page->folder->type . PHP_EOL;
-      // if (isset($folder)) {
-      //
-      // }
-      // else {
-      //   // $archive_key = 'invalid';
-      //   // print_r($landing_page);
-      //   // print "FOLDER: {$folder_id}" . PHP_EOL;
-      //   // if ($folder_id == 1417) {
-      //   //   print_r($landing_page);
-      //   // }
-      //   // print $landing_page->computedUrl . PHP_EOL;
-      //   // return;
-      // }
       if (isset($before_path) && isset($after_path)) {
         $url = str_ireplace($before_path, $after_path, $url);
       }
-      $urls[] = implode(',', [$url, $landing_page->status, $folder_type, $folder_name, $folder_status, $program_type]);
+      $urls[] = implode(',', [$url, $landing_page->status, $folder_type, $folder->path, $folder_status, $program_type]);
     }
     sort($urls);
     print implode(PHP_EOL, $urls) . PHP_EOL;
