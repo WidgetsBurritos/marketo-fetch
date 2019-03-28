@@ -21,13 +21,18 @@ $debug_mode = getenv('MARKETO_DEBUG_MODE') ?: FALSE;
 $cache_dir = getenv('MARKETO_CACHE_DIR');
 $before_path = getenv('MARKETO_PATH_BEFORE') ?: NULL;
 $after_path = getenv('MARKETO_PATH_AFTER') ?: NULL;
+$file_before = getenv('MARKETO_FILE_BEFORE') ?: '';
+$file_after = getenv('MARKETO_FILE_AFTER') ?: '';
 $twig_dir = getenv('TWIG_DIR');
 
 // Create our cache/twig directories if they don't already exist.
 $dirs = [$cache_dir, $twig_dir];
+if (!empty($file_after)) {
+  $dirs[] = $file_after;
+}
 foreach ($dirs as $dir) {
   if (!empty($dir) && !file_exists($dir)) {
-    mkdir($dir, 0700);
+    mkdir($dir, 0700, TRUE);
   }
 }
 
@@ -181,9 +186,11 @@ switch ($argument) {
     break;
 
   case 'landing-page-urls':
-    print '=====================' . PHP_EOL;
-    print 'Landing Page URLs' . PHP_EOL;
-    print '=====================' . PHP_EOL;
+    if ($debug_mode) {
+      print '=====================' . PHP_EOL;
+      print 'Landing Page URLs' . PHP_EOL;
+      print '=====================' . PHP_EOL;
+    }
     $landing_pages = $marketo->getAllLandingPages();
 
     $urls = [
@@ -282,6 +289,26 @@ switch ($argument) {
     // TODO: Write mechanism to purge only specific caches.
     if (!empty($cache_dir)) {
       `rm -f {$cache_dir}/*`;
+    }
+    break;
+
+  case 'list-files':
+    $files = $marketo->getAllFiles();
+    foreach ($files as $file) {
+      print $file->url . PHP_EOL;
+    }
+    break;
+
+  case 'download-files':
+    $files = $marketo->getAllFiles();
+    foreach ($files as $file) {
+      $new_path = str_replace($file_before, $file_after, $file->url);
+      // only download non-existing resources.
+      if (!file_exists($new_path)) {
+        print "Downloading {$file->url}" . PHP_EOL;
+        $contents = file_get_contents($file->url);
+        file_put_contents($new_path, $contents);
+      }
     }
     break;
 

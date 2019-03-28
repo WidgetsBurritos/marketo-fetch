@@ -198,6 +198,13 @@ class Marketo {
   /**
    * Retrieves all landing pages from Marketo.
    */
+  public function getAllFiles() {
+    return $this->getAllFromPagedEndpoint('/rest/asset/v1/files.json');
+  }
+
+  /**
+   * Retrieves all landing pages from Marketo.
+   */
   public function getAllLandingPages() {
     return $this->getAllFromPagedEndpoint('/rest/asset/v1/landingPages.json');
   }
