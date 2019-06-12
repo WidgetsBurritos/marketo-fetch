@@ -299,6 +299,15 @@ switch ($argument) {
     }
     break;
 
+  case 'list-files-modified':
+    $files = $marketo->getAllFiles();
+    foreach ($files as $file) {
+      $last_mod = trim(`curl -Is {$file->url} | grep Last-Modified | sed 's/^Last-Modified: //'`);
+      $timestamp = strtotime($last_mod);
+      print implode(", ", [$timestamp, $last_mod, $file->url]) . PHP_EOL;
+    }
+    break;
+
   case 'download-files':
     $files = $marketo->getAllFiles();
     foreach ($files as $file) {
